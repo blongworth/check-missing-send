@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import re
 import time
 
@@ -62,22 +63,27 @@ def parse_table_rows(rows):
 
 def plot_temperature_data(parsed_data):
     """
-    Create a plot of temperature vs time using matplotlib
+    Create a plot of temperature vs time using plotly
     """
-
-    # Convert timestamps to datetime objects
     times = [datetime.fromisoformat(t.replace("Z", "+00:00")) for t, _ in parsed_data]
     temps = [temp for _, temp in parsed_data]
 
-    plt.figure(figsize=(12, 6))
-    plt.plot(times, temps)
-    plt.xlabel("Time")
-    plt.ylabel("Temperature (°C)")
-    plt.title("Temperature vs Time")
-    plt.grid(True)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=times,
+        y=temps,
+        mode='lines',
+        name='Temperature'
+    ))
+
+    fig.update_layout(
+        title='Temperature vs Time',
+        xaxis_title='Time',
+        yaxis_title='Temperature (°C)',
+        template='plotly_white'
+    )
+    fig.show()
+
 
 def check_missing_intervals(parsed_data, expected_interval_minutes=10):
     """
@@ -104,27 +110,35 @@ def check_missing_intervals(parsed_data, expected_interval_minutes=10):
     return gaps
 
 
-def update_plot(fig, ax, parsed_data):
+def update_plot(fig, parsed_data):
     """
     Update the plot with new data
     """
-    ax.clear()
     times = [datetime.fromisoformat(t.replace("Z", "+00:00")) for t, _ in parsed_data]
     temps = [temp for _, temp in parsed_data]
-    ax.plot(times, temps)
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Temperature (°C)")
-    ax.set_title("Temperature vs Time")
-    ax.grid(True)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.draw()
-    plt.pause(0.1)
+    
+    fig.data[0].x = times
+    fig.data[0].y = temps
+    fig.show()
 
 
 def main():
     try:
-        fig, ax = plt.subplots(figsize=(12, 6))
+        # Create initial empty figure
+        fig = go.Figure(data=[go.Scatter(
+            x=[],
+            y=[],
+            mode='lines',
+            name='Temperature'
+        )])
+        
+        fig.update_layout(
+            title='Temperature vs Time',
+            xaxis_title='Time',
+            yaxis_title='Temperature (°C)',
+            template='plotly_white'
+        )
+
         while True:
             data = get_table_rows(url, start_date)
             if data:
@@ -134,11 +148,10 @@ def main():
                     print("\nMissing intervals found:")
                     for start, end in checked_gaps:
                         print(f"Missing from {start} to {end}")
-                update_plot(fig, ax, parsed_data)
-            plt.pause(600)  # Wait 10 minutes
+                update_plot(fig, parsed_data)
+            time.sleep(600)  # Wait 10 minutes
     except KeyboardInterrupt:
         print("\nExiting program...")
-        plt.close()
 
 
 if __name__ == "__main__":
