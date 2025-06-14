@@ -26,5 +26,6 @@ ENV FLASK_APP=app.py
 # Reset the entrypoint, don't invoke `uv`
 ENTRYPOINT []
 
+
 # Command to run the application using gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "120", "app:server"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "4", "--timeout", "120", "app:server"]
