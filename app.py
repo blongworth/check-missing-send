@@ -1,24 +1,39 @@
 from flask import Flask, render_template
 from dash import Dash, html, dcc
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 from datetime import datetime
 import pandas as pd
-from main import get_table_rows, parse_table_rows, check_missing_intervals, url, start_date
+from main import get_table_rows, parse_table_rows, check_missing_intervals, start_date
+from constants import URLS
 
 app = Flask(__name__)
-dash_app = Dash(__name__, server=app, url_base_pathname='/dash/')
+dash_app = Dash(__name__, server=app, url_base_pathname='/')
 
 # Initialize empty data
 data_store = {
     'parsed_data': [],
     'gaps': [],
-    'last_reading': None
+    'last_reading': None,
+    'current_url': URLS['GEMS']  # Default to GEMS
 }
 
 # Create the layout
 dash_app.layout = html.Div([
     html.H1('Temperature Monitoring Dashboard'),
+    html.Div([
+        html.Label('Select Data Source:', style={'marginRight': '10px'}),
+        dcc.RadioItems(
+            id='url-selector',
+            options=[
+                {'label': ' LECS ', 'value': 'LECS'},
+                {'label': ' GEMS ', 'value': 'GEMS'}
+            ],
+            value='GEMS',
+            inline=True,
+            style={'margin': '10px 0'}
+        )
+    ], style={'marginBottom': '20px'}),
     html.Div([
         html.H3('Latest Reading'),
         html.Div(id='last-reading')
@@ -39,11 +54,15 @@ dash_app.layout = html.Div([
     [Output('temperature-plot', 'figure'),
      Output('last-reading', 'children'),
      Output('missing-intervals', 'children')],
-    Input('interval-component', 'n_intervals')
+    [Input('interval-component', 'n_intervals'),
+     Input('url-selector', 'value')]
 )
-def update_dashboard(n):
+def update_dashboard(n, selected_source):
+    # Update the current URL based on selection
+    data_store['current_url'] = URLS[selected_source]
+    
     # Fetch and process data
-    data = get_table_rows(url, start_date)
+    data = get_table_rows(data_store['current_url'], start_date)
     if data:
         data_store['parsed_data'] = parse_table_rows(data)
         data_store['gaps'] = check_missing_intervals(data_store['parsed_data'])
@@ -59,10 +78,10 @@ def update_dashboard(n):
         x=times,
         y=temps,
         mode='lines',
-        name='Temperature'
+        name=f'{selected_source} Temperature'
     ))
     fig.update_layout(
-        title='Temperature vs Time',
+        title=f'{selected_source} Temperature vs Time',
         xaxis_title='Time',
         yaxis_title='Temperature (°C)',
         template='plotly_white'
@@ -74,6 +93,7 @@ def update_dashboard(n):
         timestamp, temp = data_store['last_reading']
         dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
         last_reading_html = html.Div([
+            html.P(f"Source: {selected_source}"),
             html.P(f"Time: {dt.strftime('%Y-%m-%d %H:%M:%S')} UTC"),
             html.P(f"Temperature: {temp:.2f}°C")
         ])

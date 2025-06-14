@@ -6,7 +6,7 @@ from plotly.subplots import make_subplots
 import re
 import time
 
-url = "https://gems.whoi.edu/LECS_data/?timestamp="
+url = "https://gems.whoi.edu/GEMS_data/?timestamp="
 start_date = datetime.strptime("2025-06-01", "%Y-%m-%d")
 
 
