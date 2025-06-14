@@ -11,9 +11,7 @@ ENV UV_LINK_MODE=copy
 
 # Install the project's dependencies using the lockfile and settings
 COPY . /app
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
-
+RUN uv sync --locked --no-dev
 
 # Expose the port the app runs on
 EXPOSE 8000
