@@ -7,8 +7,14 @@ import pandas as pd
 from main import get_table_rows, parse_table_rows, check_missing_intervals, start_date
 from constants import URLS
 
-app = Flask(__name__)
-dash_app = Dash(__name__, server=app, url_base_pathname='/')
+# Create the Flask app
+server = Flask(__name__)
+# Initialize the Dash app with Flask server
+dash_app = Dash(
+    __name__,
+    server=server,
+    url_base_pathname='/'
+)
 
 # Initialize empty data
 data_store = {
@@ -111,4 +117,4 @@ def update_dashboard(n, selected_source):
     return fig, last_reading_html, missing_intervals_html
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    server.run(debug=True, host='0.0.0.0', port=8000)
